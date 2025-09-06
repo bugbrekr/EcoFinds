@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Eco Finds Login</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<div class="nature-background">
+			<div class="floating-leaf leaf-1"></div>
+			<div class="floating-leaf leaf-2"></div>
+			<div class="floating-leaf leaf-3"></div>
+			<div class="floating-leaf leaf-4"></div>
+		</div>
+
+		<div class="login-container">
+			<div class="wellness-card">
+				<div class="organic-border"></div>
+
+				<div class="mindful-header">
+					<div class="zen-logo">
+						<svg
+							width="56"
+							height="56"
+							viewBox="0 0 56 56"
+							fill="none"
+						>
+							<circle
+								cx="28"
+								cy="28"
+								r="26"
+								stroke="currentColor"
+								stroke-width="2"
+								fill="none"
+								opacity="0.6"
+							/>
+							<circle
+								cx="28"
+								cy="28"
+								r="18"
+								stroke="currentColor"
+								stroke-width="1.5"
+								fill="none"
+								opacity="0.8"
+							/>
+							<circle
+								cx="28"
+								cy="28"
+								r="10"
+								fill="currentColor"
+								opacity="0.9"
+							/>
+							<path
+								d="M28 18v20M18 28h20"
+								stroke="white"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+						</svg>
+						<div class="zen-glow"></div>
+					</div>
+					<h1>Enter Password</h1>
+				</div>
+
+				<form class="harmony-form" id="loginForm" novalidate>
+					<div class="organic-field">
+						<div class="field-nature"></div>
+						<input
+							type="password"
+							id="password"
+							name="password"
+							required
+							autocomplete="current-password"
+						/>
+						<label for="password">Password</label>
+						<div class="growth-indicator">
+							<div class="leaf-sprout"></div>
+						</div>
+						<span class="gentle-error" id="passwordError"></span>
+					</div>
+
+					<button type="submit" class="harmony-button">
+						<div class="button-earth"></div>
+						<span class="button-text">Continue</span>
+						<div class="button-growth">
+							<div class="login-container">
+								<form id="emailForm">
+									<div class="organic-field">
+										<div class="field-nature"></div>
+										<input
+											type="email"
+											id="email"
+											name="email"
+											required
+											autocomplete="email"
+										/>
+										<label for="email">Email Address</label>
+										<div class="growth-indicator">
+											<div class="leaf-sprout"></div>
+										</div>
+										<span
+											class="gentle-error"
+											id="emailError"
+										></span>
+									</div>
+								</form>
+							</div>
+						</div>
+					</button>
+				</form>
+			</div>
+		</div>
+	</body>
+</html>
