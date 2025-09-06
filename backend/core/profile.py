@@ -9,7 +9,11 @@ class ProfileManager:
         """
         Fetches user profile by email.
         """
-        return self.db["user_profiles"].find_one({"email": email})
+        profile = self.db["user_profiles"].find_one({"email": email})
+        if profile is None:
+            return None
+        profile.pop("_id", None)
+        return profile
 
     def update_user_profile(self, email: str, update_data: dict) -> bool:
         """

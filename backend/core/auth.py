@@ -180,4 +180,25 @@ class AuthorizationManager:
             "created_at": time.time()
         })
         return auth_token
-
+    def verify_auth_token(self, auth_token: str) -> tuple[bool, int]:
+        """
+        Verifies auth token.
+        """
+        data = self.db["auth_sessions"].find_one({"auth_token": auth_token})
+        if data is None:
+            return False, 401
+        if data.get("created_at", 0) + self.config.auth_token_ttl < time.time():
+            return False, 401
+        return True, 200
+    def verify_authorization_header(self, header: str) -> str | None:
+        """
+        Verifies Authorization header and returns email if valid.
+        """
+        if not header.startswith("Bearer "):
+            return None, 401
+        auth_token = header.split(" ")[1]
+        valid, code = self.verify_auth_token(auth_token)
+        if not valid:
+            return None, code
+        data = self.db["auth_sessions"].find_one({"auth_token": auth_token})
+        return data.get("email"), 200

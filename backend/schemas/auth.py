@@ -18,3 +18,6 @@ class LoginRegisterRequest(BaseModel):
     email: str
     password: str
     full_name: str
+
+class VerifyTokenRequest(BaseModel):
+    auth_token: str

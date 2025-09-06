@@ -22,6 +22,7 @@ class Server(SubConfig):
 class Auth(SubConfig):
     login_otp_ttl: int = 300
     login_otp_max_attempts: int = 5
+    auth_token_ttl: int = 86400
 
 @dataclass
 class Twilio(SubConfig):

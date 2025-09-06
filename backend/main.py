@@ -4,12 +4,13 @@ Author: github.com/bugbrekr
 Date: 31/08/2025
 """
 
+from typing import Annotated
 import core.auth
 import core.config
 import core.database
 import core.profile
 import schemas.auth
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -155,3 +156,47 @@ def auth_login_register(register_request: schemas.auth.LoginRegisterRequest):
         "code": 200,
         "auth_token": auth_token
     }
+
+@app.post("/a/auth/verifyToken")
+def auth_verify_token(verify_request: schemas.auth.VerifyTokenRequest):
+    """
+    Verifies auth token.
+    """
+    res, code = authorization_manager.verify_auth_token(
+        auth_token=verify_request.auth_token
+    )
+    return {
+        "success": res,
+        "code": code
+    }
+
+@app.get("/a/profile/my")
+def get_profile(Authorization: Annotated[str | None, Header()] = None):
+    """
+    Fetches user profile by email.
+    """
+    email, code = authorization_manager.verify_authorization_header(Authorization)
+    if code != 200:
+        return {
+            "success": False,
+            "code": code,
+        }
+    if not email:
+        return {
+            "success": False,
+            "code": 404,
+            "message": "Profile not found."
+        }
+    profile = profile_manager.get_user_profile(email=email)
+    if not profile:
+        return {
+            "success": False,
+            "code": 404,
+            "message": "Profile not found."
+        }
+    return {
+        "success": True,
+        "code": 200,
+        "profile": profile
+    }
+
