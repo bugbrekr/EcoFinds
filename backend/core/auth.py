@@ -40,12 +40,14 @@ class OTPSession:
             phone_number: str | None = None,
             session_id: str | None = None,
             ttl: int = 300,
+            max_attempts: int = 5,
             length: int = 4):
         self.twilio_client = twilio_client
         self.db = db
         self.length = length
         self.ttl = ttl
         self.auth_strings = auth_strings
+        self.max_attempts = max_attempts
         if phone_number:
             self.phone_number = phone_number
             self.session_id = secrets.token_hex(16)
@@ -87,7 +89,7 @@ class OTPSession:
         if data is None:
             return False, 404
         if data.get("otp") != otp:
-            if data.get("attempts", 0) >= 3:
+            if data.get("attempts", 0) >= self.max_attempts:
                 return False, 429
             self.db["otp_sessions"].update_one({"session_id": self.session_id}, {"$inc": {"attempts": 1}})
             return False, 401
@@ -120,5 +122,62 @@ class AuthorizationManager:
             auth_strings=self.auth_strings,
             phone_number=phone_number,
             session_id=session_id,
-            ttl=self.config.login_otp_ttl
+            ttl=self.config.login_otp_ttl,
+            max_attempts=self.config.login_otp_max_attempts
         )
+    def login_email_step(
+            self,
+            email: str
+        ) -> tuple[bool, int]:
+        """
+        Handles email login step.
+        Returns 404 if user is new, 200 if already exists.
+        """ 
+        user = self.db["user_auth"].find_one({"email": email})
+        if user is None:
+            return True, 404
+        return True, 200
+    def login_register(
+            self,
+            email: str,
+            password: str
+        ) -> tuple[bool, int]:
+        """
+        Registers a new user.
+        """
+        user = self.db["user_auth"].find_one({"email": email})
+        if user is not None:
+            return True, 409
+        self.db["user_auth"].insert_one({
+            "user_id": secrets.token_hex(16),
+            "email": email,
+            "password": password,
+            "created_at": time.time()
+        })
+        return True, 200
+    def verify_creds(
+            self,
+            email: str,
+            password: str
+        ) -> tuple[bool, int]:
+        """
+        Verifies user credentials.
+        """
+        user = self.db["user_auth"].find_one({"email": email})
+        if user is None:
+            return False, 404
+        if user.get("password") != password:
+            return False, 401
+        return True, 200
+    def generate_auth_token(self, email: str) -> str:
+        """
+        Generates auth token for user and saves to database.
+        """
+        auth_token = secrets.token_hex(32)
+        self.db["auth_sessions"].insert_one({
+            "email": email,
+            "auth_token": auth_token,
+            "created_at": time.time()
+        })
+        return auth_token
+

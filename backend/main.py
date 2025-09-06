@@ -7,6 +7,7 @@ Date: 31/08/2025
 import core.auth
 import core.config
 import core.database
+import core.profile
 import schemas.auth
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +31,8 @@ authorization_manager = core.auth.AuthorizationManager(
     db=db,
     twilio_client=twilioc,
 )
+
+profile_manager = core.profile.ProfileManager(db=db)
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,7 +58,7 @@ def auth_generate_otp(otp_request: schemas.auth.OTPRequest):
     }
 
 @app.post("/a/auth/verifyOTP")
-def auth_login(otp_validation_request: schemas.auth.OTPValidationRequest):
+def auth_verify_otp(otp_validation_request: schemas.auth.OTPValidationRequest):
     """
     Verifies OTP for the session.
     """
@@ -67,4 +70,88 @@ def auth_login(otp_validation_request: schemas.auth.OTPValidationRequest):
         "success": res,
         "code": res_code,
         "auth_token": "helloworld"
+    }
+
+@app.post("/a/auth/login/email")
+def auth_login_email(login_request: schemas.auth.LoginEmailRequest):
+    """
+    Authenticates user with email and password.
+    """
+    res, code = authorization_manager.login_email_step(
+        email=login_request.email
+    )
+    return {
+        "success": res,
+        "code": code,
+        "redirect_url": "/login/password"
+    }
+
+@app.post("/a/auth/login/password")
+def auth_login_password(login_request: schemas.auth.LoginPasswordRequest):
+    """
+    Authenticates user with email and password.
+    """
+    res, code = authorization_manager.verify_creds(
+        email=login_request.email,
+        password=login_request.password
+    )
+    if code == 404:
+        return {
+            "success": False,
+            "code": code,
+            "message": "User not found. Please register."
+        }
+    if code == 401:
+        return {
+            "success": False,
+            "code": code,
+            "message": "Invalid credentials."
+        }
+    if code != 200:
+        return {
+            "success": False,
+            "code": code,
+            "message": "An unknown error occurred."
+        }
+    auth_token = authorization_manager.generate_auth_token(
+        user_id=login_request.email
+    )
+    return {
+        "success": True,
+        "code": 200,
+        "auth_token": auth_token
+    }
+
+@app.post("/a/auth/login/register")
+def auth_login_register(register_request: schemas.auth.LoginRegisterRequest):
+    """
+    Registers a new user with name, email and password.
+    """
+    _, code = authorization_manager.login_register(
+        email=register_request.email,
+        password=register_request.password
+    )
+    if code == 409:
+        return {
+            "success": False,
+            "code": code,
+            "message": "User already exists. Please login."
+        }
+    if code != 200:
+        return {
+            "success": False,
+            "code": code,
+            "message": "An unknown error occurred."
+        }
+    auth_token = authorization_manager.generate_auth_token(
+        email=register_request.email
+    )
+    profile_manager.create_user_profile(
+        email=register_request.email,
+        full_name=register_request.full_name
+    )
+    return {
+        "success": True,
+        "code": 200,
+        "auth_token": auth_token
     }
