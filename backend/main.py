@@ -9,7 +9,11 @@ import core.auth
 import core.config
 import core.database
 import core.profile
+import core.product
+import core.cart
+import core.orders
 import schemas.auth
+import schemas.cart
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,8 +36,10 @@ authorization_manager = core.auth.AuthorizationManager(
     db=db,
     twilio_client=twilioc,
 )
-
 profile_manager = core.profile.ProfileManager(db=db)
+product_manager = core.product.ProductListingManager(db=db)
+cart_manager = core.cart.CartManager(db=db)
+order_manager = core.orders.OrderManager(db=db)
 
 app.add_middleware(
     CORSMiddleware,
@@ -198,4 +204,100 @@ def get_profile(Authorization: Annotated[str | None, Header()] = None):
         "success": True,
         "code": 200,
         "profile": profile
+    }
+
+@app.get("/a/products/search")
+def search_products(query: str):
+    """
+    Searches for products based on a query string.
+    """
+    results = product_manager.search_products(query)
+    return {
+        "success": True,
+        "code": 200,
+        "results": results
+    }
+
+@app.post("/a/cart/add")
+def add_to_cart(request: schemas.cart.AddToCartRequest, Authorization: Annotated[str | None, Header()] = None):
+    """
+    Adds a product to the user's cart.
+    """
+    email, code = authorization_manager.verify_authorization_header(Authorization)
+    if code != 200:
+        return {
+            "success": False,
+            "code": code,
+        }
+    if not email:
+        return {
+            "success": False,
+            "code": 404,
+            "message": "Profile not found."
+        }
+    res = cart_manager.add_to_cart(email=email, product_id=request.product_id)
+    if not res:
+        return {
+            "success": False,
+            "code": 500,
+            "message": "Failed to add to cart."
+        }
+    return {
+        "success": True,
+        "code": 200,
+        "message": "Product added to cart."
+    }
+
+@app.post("/a/cart/remove")
+def remove_from_cart(request: schemas.cart.RemoveFromCartRequest, Authorization: Annotated[str | None, Header()] = None):
+    """
+    Removes a product from the user's cart.
+    """
+    email, code = authorization_manager.verify_authorization_header(Authorization)
+    if code != 200:
+        return {
+            "success": False,
+            "code": code,
+        }
+    if not email:
+        return {
+            "success": False,
+            "code": 404,
+            "message": "Profile not found."
+        }
+    res = cart_manager.remove_from_cart(email=email, product_id=request.product_id)
+    if not res:
+        return {
+            "success": False,
+            "code": 500,
+            "message": "Failed to remove from cart."
+        }
+    return {
+        "success": True,
+        "code": 200,
+        "message": "Product removed from cart."
+    }
+
+@app.get("/a/cart/")
+def get_cart_items(Authorization: Annotated[str | None, Header()] = None):
+    """
+    Fetches all items in the user's cart.
+    """
+    email, code = authorization_manager.verify_authorization_header(Authorization)
+    if code != 200:
+        return {
+            "success": False,
+            "code": code,
+        }
+    if not email:
+        return {
+            "success": False,
+            "code": 404,
+            "message": "Profile not found."
+        }
+    items = cart_manager.get_cart_items(email=email)
+    return {
+        "success": True,
+        "code": 200,
+        "items": items
     }

@@ -1,6 +1,5 @@
 from core import database
 
-
 class ProfileManager:
     def __init__(self, db: database.pymongo.database.Database):
         self.db = db

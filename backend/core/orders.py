@@ -1,7 +1,7 @@
 import time
 from core import database
 
-class Orders:
+class OrderManager:
     def __init__(self, db: database.pymongo.database.Database):
         self.db = db
 
