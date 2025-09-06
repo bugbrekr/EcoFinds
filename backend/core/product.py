@@ -71,4 +71,39 @@ class ProductListingManager:
         """
         result = self.db["product_listings"].delete_one({"product_id": product_id})
         return result.deleted_count > 0
-        
+    def search_product_listings(
+            self,
+            query: str,
+            category: str | None = None,
+            price_min: float | None = None,
+            price_max: float | None = None,
+            seller_email: str | None = None
+        ) -> list[dict]:
+        """
+        Searches product listings by title or description.
+        """
+        results = self.db["product_listings"].find({
+            "$or": [
+                {"title": {"$regex": query, "$options": "i"}},
+                {"description": {"$regex": query, "$options": "i"}},
+                {"category": {"$regex": query, "$options": "i"}}
+            ]
+        })
+        filtered_results = []
+        for result in results:
+            match = True
+            if category and result.get("category") != category:
+                match = False
+            if price_min is not None and result.get("price", 0) < price_min:
+                match = False
+            if price_max is not None and result.get("price", 0) > price_max:
+                match = False
+            if seller_email and result.get("seller_email") != seller_email:
+                match = False
+            if match:
+                filtered_results.append(result)
+        listings = []
+        for product in filtered_results:
+            product.pop("_id", None)
+            listings.append(product)
+        return listings
