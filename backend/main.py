@@ -199,4 +199,3 @@ def get_profile(Authorization: Annotated[str | None, Header()] = None):
         "code": 200,
         "profile": profile
     }
-
